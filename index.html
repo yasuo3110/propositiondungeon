@@ -1,116 +1,81 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>真実の扉 - Proposition Dungeon</title>
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin="anonymous"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Graduate&family=M+PLUS+Rounded+1c:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="logo">
-        <div class="crest">真</div>
-        <div>
-          <div class="title">真実の扉</div>
-          <div class="subtitle">Proposition Dungeon</div>
-        </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dungeon Doors</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Proposition Dungeon</p>
+        <h1>２つの扉を選び、迷路を抜けろ</h1>
+        <p class="lede">一歩ずつ奥へ進んで、出口の光を見つけてください。選んだ扉が道をつくります。</p>
       </div>
-      <div class="badges">
-        <div class="chip">
-          <span>連続宝石</span>
-          <strong id="streak">0</strong>
-        </div>
-        <div class="chip">
-          <span>総宝石</span>
-          <strong id="gems">0</strong>
-        </div>
-        <div class="chip">
-          <span>進行</span>
-          <strong id="stage">0</strong>
-        </div>
+      <div class="hero-status">
+        <div class="pill pill-glow" id="status-pill">準備OK</div>
+        <button class="ghost-btn" id="reset-btn" type="button">最初から</button>
       </div>
     </header>
 
-    <main>
-      <section class="scene">
-        <div class="stars"></div>
-        <div class="fog fog-top"></div>
-        <div class="fog fog-bottom"></div>
-        <div class="floor"></div>
-        <div class="wall wall-left"></div>
-        <div class="wall wall-right"></div>
-        <div class="walk glow"></div>
-        <div class="walk trail"></div>
-
-        <div class="door-area" id="door-area">
-          <div class="question-card" id="question-card">
-            <div class="cue">命題の真偽は？</div>
-            <div class="prompt" id="prompt">命題がここに表示されます</div>
-            <div class="hint">真の扉と偽の扉、どちらが宝石へ続く？</div>
+    <main class="grid">
+      <section class="card map-card">
+        <div class="card-head">
+          <div>
+            <p class="label">歩み</p>
+            <h2>ダンジョンマップ</h2>
           </div>
-          <div class="doors">
-            <button class="door" data-choice="true">
-              <div class="door-panel">
-                <span class="label">真</span>
-                <span class="desc">True</span>
-              </div>
-            </button>
-            <button class="door" data-choice="false">
-              <div class="door-panel">
-                <span class="label">偽</span>
-                <span class="desc">False</span>
-              </div>
-            </button>
-          </div>
+          <div class="stepper" id="steps">歩数 0</div>
         </div>
-
-        <div class="overlay hidden" id="result">
-          <div class="card" id="result-card">
-            <div class="status" id="result-status">Success</div>
-            <div class="explain" id="explain">
-              解説がここに入ります。高校数学の命題をここに差し替えてください。
-            </div>
-            <div class="gem" aria-hidden="true">
-              <div class="gem-core"></div>
-            </div>
-            <div class="actions">
-              <button id="next-btn" class="primary">次の扉へ</button>
-              <button id="escape-btn" class="secondary">逃げ出す</button>
-              <button id="retry-btn" class="primary hidden">もう一度</button>
-            </div>
-          </div>
-        </div>
+        <div class="map" id="map"></div>
+        <p class="map-hint">● 現在地　□ 訪れた部屋　・ 未踏の闇</p>
       </section>
 
-      <section class="instructions">
-        <h2>遊び方</h2>
-        <p>
-          闇の回廊を進み、扉の前で命題の真偽を選びます。正しい扉なら宝石を獲得し、解説を読みながらさらに奥へ。
-          誤った扉を開くと奈落の底へ落ち、連続獲得は途切れます。
-        </p>
-        <ul>
-          <li>扉は「真」「偽」から選択</li>
-          <li>正解で宝石ゲット。連続数に挑戦</li>
-          <li>不正解でゲームオーバー。解説を確認</li>
-          <li>問題リストは <code>questions</code> 配列を書き換えて差し替え可能</li>
-        </ul>
+      <section class="card room-card">
+        <div class="card-head">
+          <div>
+            <p class="label">現在地</p>
+            <h2 id="room-name">スタート</h2>
+          </div>
+          <div class="path-label" id="path-label">スタート</div>
+        </div>
+        <p class="room-desc" id="room-desc">湿った石畳の小部屋。奥に２つの扉が見える。</p>
+        <div class="doors" id="doors"></div>
+      </section>
+
+      <section class="card log-card">
+        <div class="card-head">
+          <div>
+            <p class="label">記録</p>
+            <h2>足跡ログ</h2>
+          </div>
+          <div class="pulse-dot" id="pulse"></div>
+        </div>
+        <ul class="log" id="log"></ul>
       </section>
     </main>
+  </div>
 
-    <script src="script.js"></script>
-  </body>
+  <template id="door-template">
+    <button class="door-btn" type="button">
+      <span class="door-label"></span>
+      <span class="door-next"></span>
+      <span class="door-footsteps">歩いて進む</span>
+    </button>
+  </template>
+
+  <template id="log-template">
+    <li>
+      <span class="log-time"></span>
+      <span class="log-text"></span>
+    </li>
+  </template>
+
+  <script src="script.js"></script>
+</body>
 </html>

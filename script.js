@@ -1,148 +1,232 @@
-const questions = [
-  {
-    text: "実数 a, b がともに正のとき、a + b ≥ 2√(ab) が成り立つ。",
-    answer: true,
-    explain:
-      "相加平均と相乗平均の大小関係（AM ≥ GM）より常に真。等号は a = b のとき成立します。",
+const dungeon = {
+  start: "A",
+  goal: "G",
+  size: 5,
+  rooms: {
+    A: {
+      name: "スタートの間",
+      desc: "湿った石畳の小部屋。奥に２つの扉が見える。",
+      pos: [0, 2],
+      doors: [
+        { label: "苔むした青の扉", to: "B", hint: "低い天井の通路" },
+        { label: "錆びた赤の扉", to: "C", hint: "水音のする下り坂" },
+      ],
+    },
+    B: {
+      name: "低い天井の通路",
+      desc: "ひんやりとした風。松明の煙が漂う。",
+      pos: [1, 2],
+      doors: [
+        { label: "静かな鉄扉", to: "D", hint: "光がちらつく" },
+        { label: "吊り橋の扉", to: "E", hint: "湿った木の匂い" },
+      ],
+    },
+    C: {
+      name: "滴る水路",
+      desc: "足首ほどの水。壁の苔が光る。",
+      pos: [0, 3],
+      doors: [
+        { label: "湿った回廊", to: "E", hint: "かすかなすすり泣き" },
+        { label: "細い戻り道", to: "A", hint: "スタートへ引き返す" },
+      ],
+    },
+    D: {
+      name: "松明の間",
+      desc: "松明が並び、足音がよく響く。",
+      pos: [2, 2],
+      doors: [
+        { label: "光へ進む", to: "F", hint: "石像の影が動いた気がする" },
+        { label: "風の抜け道", to: "H", hint: "高い位置から風" },
+      ],
+    },
+    E: {
+      name: "崩れた書庫",
+      desc: "古い書架の残骸。紙の匂いが重い。",
+      pos: [1, 3],
+      doors: [
+        { label: "書架の裏手", to: "D", hint: "灯りが見える" },
+        { label: "湿気た石段", to: "C", hint: "水滴の音が続く" },
+      ],
+    },
+    F: {
+      name: "石像の広間",
+      desc: "巨大な石像が２体。目がこちらを追う。",
+      pos: [3, 2],
+      doors: [
+        { label: "像の陰の扉", to: "G", hint: "微かな光" },
+        { label: "振り返る扉", to: "E", hint: "過去へ戻る気配" },
+      ],
+    },
+    H: {
+      name: "吹き抜けの足場",
+      desc: "高い天井に穴。冷たい風が落ちてくる。",
+      pos: [2, 1],
+      doors: [
+        { label: "梯子を登る", to: "D", hint: "松明の揺れ" },
+        { label: "裂け目へ滑り込む", to: "G", hint: "出口の光が差す" },
+      ],
+    },
+    G: {
+      name: "出口の光",
+      desc: "眩しい外の世界。新鮮な空気が流れ込む。",
+      pos: [4, 2],
+      doors: [],
+      goal: true,
+    },
   },
-  {
-    text: "任意の実数 x について、sin²x + cos²x = 0 が成り立つ。",
-    answer: false,
-    explain:
-      "三角恒等式 sin²x + cos²x = 1 が成り立つ。0 になることはありません。",
-  },
-  {
-    text: "実数 x, y が 0 より大ならば、(x + y)^2 > x^2 + y^2 が成り立つ。",
-    answer: true,
-    explain:
-      "(x + y)^2 = x^2 + 2xy + y^2 で 2xy > 0 なので不等号は常に真。",
-  },
-];
-
-const dom = {
-  doorArea: document.getElementById("door-area"),
-  prompt: document.getElementById("prompt"),
-  streak: document.getElementById("streak"),
-  gems: document.getElementById("gems"),
-  stage: document.getElementById("stage"),
-  doors: Array.from(document.querySelectorAll(".door")),
-  overlay: document.getElementById("result"),
-  status: document.getElementById("result-status"),
-  explain: document.getElementById("explain"),
-  next: document.getElementById("next-btn"),
-  escape: document.getElementById("escape-btn"),
-  retry: document.getElementById("retry-btn"),
-  scene: document.querySelector(".scene"),
 };
 
-const state = {
-  index: 0,
-  gems: 0,
-  streak: 0,
-  busy: false,
+const mapEl = document.getElementById("map");
+const doorsEl = document.getElementById("doors");
+const roomNameEl = document.getElementById("room-name");
+const roomDescEl = document.getElementById("room-desc");
+const pathLabelEl = document.getElementById("path-label");
+const statusPillEl = document.getElementById("status-pill");
+const stepsEl = document.getElementById("steps");
+const logEl = document.getElementById("log");
+const pulseEl = document.getElementById("pulse");
+const resetBtn = document.getElementById("reset-btn");
+
+const doorTemplate = document.getElementById("door-template");
+const logTemplate = document.getElementById("log-template");
+
+let state = {
+  current: dungeon.start,
+  steps: 0,
+  visited: new Set([dungeon.start]),
+  history: [],
+  walking: false,
 };
 
-function pickQuestion() {
-  state.index = (state.index + 1) % questions.length;
-  return questions[state.index];
+const formatTime = () => {
+  const now = new Date();
+  return now.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+};
+
+function setStatus(text, glow = true) {
+  statusPillEl.textContent = text;
+  statusPillEl.classList.toggle("pill-glow", glow);
+  pulseEl.classList.toggle("idle", !glow);
 }
 
-function setQuestion(q) {
-  dom.prompt.textContent = q.text;
-  dom.stage.textContent = state.index + 1;
-  dom.doorArea.classList.remove("busy");
-  dom.doors.forEach((door) => door.classList.remove("selected"));
-}
-
-function updateScore() {
-  dom.gems.textContent = state.gems;
-  dom.streak.textContent = state.streak;
-}
-
-function showResult({ success, explain }) {
-  dom.status.textContent = success ? "宝石を獲得！" : "奈落の底へ…";
-  dom.status.style.color = success ? "#50e2c6" : "#ff5f6d";
-  dom.explain.textContent = explain;
-  dom.next.classList.toggle("hidden", !success);
-  dom.escape.classList.toggle("hidden", !success);
-  dom.retry.classList.toggle("hidden", success);
-  dom.overlay.classList.remove("hidden");
-}
-
-function hideResult() {
-  dom.overlay.classList.add("hidden");
-  dom.scene.classList.remove("falling");
-}
-
-function handleChoice(choice) {
-  if (state.busy) return;
-  state.busy = true;
-  dom.doorArea.classList.add("busy");
-  dom.scene.classList.add("advance");
-
-  dom.doors.forEach((d) => {
-    d.classList.toggle("selected", d.dataset.choice === String(choice));
-  });
-
-  setTimeout(() => {
-    const q = questions[state.index];
-    const success = q.answer === choice;
-
-    dom.scene.classList.remove("advance");
-
-    if (success) {
-      state.gems += 1;
-      state.streak += 1;
-    } else {
-      state.streak = 0;
-      dom.scene.classList.add("falling");
+function renderMap() {
+  mapEl.innerHTML = "";
+  for (let y = 0; y < dungeon.size; y += 1) {
+    for (let x = 0; x < dungeon.size; x += 1) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const roomId = Object.keys(dungeon.rooms).find((id) => {
+        const [rx, ry] = dungeon.rooms[id].pos;
+        return rx === x && ry === y;
+      });
+      if (roomId) {
+        const isCurrent = roomId === state.current;
+        const isVisited = state.visited.has(roomId);
+        const isGoal = roomId === dungeon.goal;
+        if (isVisited) cell.classList.add("visited");
+        if (isCurrent) cell.classList.add("current");
+        if (isGoal) cell.classList.add("goal");
+        cell.textContent = isCurrent ? "●" : isVisited ? "□" : "・";
+        cell.title = `${dungeon.rooms[roomId].name}`;
+      } else {
+        cell.textContent = " ";
+      }
+      mapEl.appendChild(cell);
     }
-
-    updateScore();
-    showResult({ success, explain: q.explain });
-    state.busy = false;
-  }, 1100);
+  }
 }
 
-function nextStep() {
-  hideResult();
+function renderRoom() {
+  const room = dungeon.rooms[state.current];
+  roomNameEl.textContent = room.name;
+  roomDescEl.textContent = room.desc;
+  pathLabelEl.textContent = room.goal ? "出口" : `部屋 ${state.current}`;
+  doorsEl.innerHTML = "";
+
+  if (room.goal) {
+    setStatus("クリア！", true);
+    const finish = doorTemplate.content.cloneNode(true);
+    const btn = finish.querySelector("button");
+    finish.querySelector(".door-label").textContent = "もう一度潜る";
+    finish.querySelector(".door-next").textContent = "スタートに戻る";
+    finish.querySelector(".door-footsteps").textContent = "冒険を再開";
+    btn.addEventListener("click", reset);
+    doorsEl.appendChild(finish);
+    return;
+  }
+
+  room.doors.forEach((door, index) => {
+    const clone = doorTemplate.content.cloneNode(true);
+    clone.querySelector(".door-label").textContent = `${index === 0 ? "左" : "右"}の扉：${door.label}`;
+    clone.querySelector(".door-next").textContent = door.hint;
+    const btn = clone.querySelector("button");
+    btn.addEventListener("click", () => walkTo(door.to, door.label));
+    doorsEl.appendChild(clone);
+  });
+}
+
+function renderLog() {
+  logEl.innerHTML = "";
+  state.history.slice(-8).reverse().forEach((entry) => {
+    const row = logTemplate.content.cloneNode(true);
+    row.querySelector(".log-time").textContent = entry.time;
+    row.querySelector(".log-text").textContent = entry.text;
+    logEl.appendChild(row);
+  });
+}
+
+function addLog(text) {
+  state.history.push({ time: formatTime(), text });
+  renderLog();
+}
+
+function updateSteps() {
+  stepsEl.textContent = `歩数 ${state.steps}`;
+}
+
+function walkTo(nextRoomId, label) {
+  if (state.walking) return;
+  const nextRoom = dungeon.rooms[nextRoomId];
+  if (!nextRoom) return;
+
+  state.walking = true;
+  setStatus("歩行中...", true);
+  doorsEl.querySelectorAll("button").forEach((btn) => (btn.disabled = true));
+
+  const logLabel = `「${label}」を選択`;
+  addLog(logLabel);
+
+  // Simulate walking delay
   setTimeout(() => {
-    const q = pickQuestion();
-    setQuestion(q);
-  }, 300);
+    state.current = nextRoomId;
+    state.steps += 1;
+    state.visited.add(nextRoomId);
+    setStatus(nextRoom.goal ? "出口に到達！" : "到着", !nextRoom.goal);
+    renderMap();
+    renderRoom();
+    updateSteps();
+    if (nextRoom.goal) {
+      addLog("出口の光を見つけた！");
+    }
+    state.walking = false;
+  }, 600);
 }
 
-function gameOverReset() {
-  hideResult();
-  state.gems = 0;
-  state.streak = 0;
-  updateScore();
-  const q = pickQuestion();
-  setQuestion(q);
+function reset() {
+  state = {
+    current: dungeon.start,
+    steps: 0,
+    visited: new Set([dungeon.start]),
+    history: [],
+    walking: false,
+  };
+  setStatus("準備OK", true);
+  renderMap();
+  renderRoom();
+  renderLog();
+  updateSteps();
 }
 
-function init() {
-  const first = questions[state.index];
-  setQuestion(first);
-  updateScore();
+resetBtn.addEventListener("click", reset);
 
-  dom.doors.forEach((door) => {
-    door.addEventListener("click", () => {
-      const choice = door.dataset.choice === "true";
-      handleChoice(choice);
-    });
-  });
-
-  dom.next.addEventListener("click", nextStep);
-  dom.escape.addEventListener("click", () => {
-    hideResult();
-    state.streak = 0;
-    updateScore();
-    const q = pickQuestion();
-    setQuestion(q);
-  });
-
-  dom.retry.addEventListener("click", gameOverReset);
-}
-
-document.addEventListener("DOMContentLoaded", init);
+reset();
