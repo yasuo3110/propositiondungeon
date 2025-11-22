@@ -86,9 +86,14 @@ const stepsEl = document.getElementById("steps");
 const logEl = document.getElementById("log");
 const pulseEl = document.getElementById("pulse");
 const resetBtn = document.getElementById("reset-btn");
+const walkOverlayEl = document.getElementById("walk-overlay");
+const walkLabelEl = document.getElementById("walk-label");
+const walkBarEl = document.getElementById("walk-bar");
 
 const doorTemplate = document.getElementById("door-template");
 const logTemplate = document.getElementById("log-template");
+
+const WALK_MS = 1200;
 
 let state = {
   current: dungeon.start,
@@ -184,6 +189,19 @@ function updateSteps() {
   stepsEl.textContent = `歩数 ${state.steps}`;
 }
 
+function showWalkOverlay(label) {
+  walkLabelEl.textContent = `${label}へ向かって歩いている...`;
+  walkOverlayEl.classList.add("active");
+  walkBarEl.style.animation = "none";
+  // force reflow to restart animation
+  void walkBarEl.offsetWidth;
+  walkBarEl.style.animation = `walkProgress ${WALK_MS}ms linear forwards`;
+}
+
+function hideWalkOverlay() {
+  walkOverlayEl.classList.remove("active");
+}
+
 function walkTo(nextRoomId, label) {
   if (state.walking) return;
   const nextRoom = dungeon.rooms[nextRoomId];
@@ -195,6 +213,7 @@ function walkTo(nextRoomId, label) {
 
   const logLabel = `「${label}」を選択`;
   addLog(logLabel);
+  showWalkOverlay(label);
 
   // Simulate walking delay
   setTimeout(() => {
@@ -208,8 +227,9 @@ function walkTo(nextRoomId, label) {
     if (nextRoom.goal) {
       addLog("出口の光を見つけた！");
     }
+    hideWalkOverlay();
     state.walking = false;
-  }, 600);
+  }, WALK_MS);
 }
 
 function reset() {
@@ -225,6 +245,7 @@ function reset() {
   renderRoom();
   renderLog();
   updateSteps();
+  hideWalkOverlay();
 }
 
 resetBtn.addEventListener("click", reset);
