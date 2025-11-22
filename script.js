@@ -86,14 +86,16 @@ const stepsEl = document.getElementById("steps");
 const logEl = document.getElementById("log");
 const pulseEl = document.getElementById("pulse");
 const resetBtn = document.getElementById("reset-btn");
-const walkOverlayEl = document.getElementById("walk-overlay");
-const walkLabelEl = document.getElementById("walk-label");
-const walkBarEl = document.getElementById("walk-bar");
+const trolleyOverlayEl = document.getElementById("trolley-overlay");
+const trolleyCartEl = document.getElementById("trolley-cart");
+const cartLabelEl = document.getElementById("cart-label");
+const trolleyCountEl = document.getElementById("trolley-count");
+const trolleyCaptionEl = document.getElementById("trolley-caption");
 
 const doorTemplate = document.getElementById("door-template");
 const logTemplate = document.getElementById("log-template");
 
-const WALK_MS = 1200;
+const TROLLEY_MS = 1400;
 
 let state = {
   current: dungeon.start,
@@ -165,7 +167,7 @@ function renderRoom() {
     clone.querySelector(".door-label").textContent = `${index === 0 ? "左" : "右"}の扉：${door.label}`;
     clone.querySelector(".door-next").textContent = door.hint;
     const btn = clone.querySelector("button");
-    btn.addEventListener("click", () => walkTo(door.to, door.label));
+    btn.addEventListener("click", () => rideTo(door.to, door.label, index));
     doorsEl.appendChild(clone);
   });
 }
@@ -189,33 +191,36 @@ function updateSteps() {
   stepsEl.textContent = `歩数 ${state.steps}`;
 }
 
-function showWalkOverlay(label) {
-  walkLabelEl.textContent = `${label}へ向かって歩いている...`;
-  walkOverlayEl.classList.add("active");
-  walkBarEl.style.animation = "none";
-  // force reflow to restart animation
-  void walkBarEl.offsetWidth;
-  walkBarEl.style.animation = `walkProgress ${WALK_MS}ms linear forwards`;
+function startTrolley(label, dirIndex) {
+  cartLabelEl.textContent = label;
+  trolleyCaptionEl.textContent = `${dirIndex === 0 ? "左" : "右"}レーンへ切り替え！`;
+  trolleyOverlayEl.classList.add("active");
+  trolleyCartEl.dataset.dir = dirIndex === 0 ? "left" : "right";
+  trolleyCartEl.style.setProperty("--tilt", dirIndex === 0 ? "-6deg" : "6deg");
+  trolleyCartEl.classList.remove("animate");
+  void trolleyCartEl.offsetWidth;
+  trolleyCartEl.classList.add("animate");
+  trolleyCountEl.textContent = "GO!";
 }
 
-function hideWalkOverlay() {
-  walkOverlayEl.classList.remove("active");
+function stopTrolley() {
+  trolleyOverlayEl.classList.remove("active");
 }
 
-function walkTo(nextRoomId, label) {
+function rideTo(nextRoomId, label, dirIndex = 0) {
   if (state.walking) return;
   const nextRoom = dungeon.rooms[nextRoomId];
   if (!nextRoom) return;
 
   state.walking = true;
-  setStatus("歩行中...", true);
+  setStatus("トロッコ出発中...", true);
   doorsEl.querySelectorAll("button").forEach((btn) => (btn.disabled = true));
 
-  const logLabel = `「${label}」を選択`;
+  const logLabel = `「${label}」の線路を選択`;
   addLog(logLabel);
-  showWalkOverlay(label);
+  startTrolley(label, dirIndex);
 
-  // Simulate walking delay
+  // Simulate trolley ride duration
   setTimeout(() => {
     state.current = nextRoomId;
     state.steps += 1;
@@ -227,9 +232,9 @@ function walkTo(nextRoomId, label) {
     if (nextRoom.goal) {
       addLog("出口の光を見つけた！");
     }
-    hideWalkOverlay();
+    stopTrolley();
     state.walking = false;
-  }, WALK_MS);
+  }, TROLLEY_MS);
 }
 
 function reset() {
@@ -245,7 +250,7 @@ function reset() {
   renderRoom();
   renderLog();
   updateSteps();
-  hideWalkOverlay();
+  stopTrolley();
 }
 
 resetBtn.addEventListener("click", reset);

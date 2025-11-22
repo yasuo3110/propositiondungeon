@@ -14,8 +14,8 @@
     <header class="hero">
       <div>
         <p class="eyebrow">Proposition Dungeon</p>
-        <h1>２つの扉を選び、迷路を抜けろ</h1>
-        <p class="lede">一歩ずつ奥へ進んで、出口の光を見つけてください。選んだ扉が道をつくります。</p>
+        <h1>トロッコを走らせ、分岐を抜けろ</h1>
+        <p class="lede">ネプリーグの「トロッコアドベンチャー」風。２つの線路から選んでゴールを目指そう。</p>
       </div>
       <div class="hero-status">
         <div class="pill pill-glow" id="status-pill">準備OK</div>
@@ -65,7 +65,7 @@
     <button class="door-btn" type="button">
       <span class="door-label"></span>
       <span class="door-next"></span>
-      <span class="door-footsteps">歩いて進む</span>
+      <span class="door-footsteps">トロッコで突っ切る</span>
     </button>
   </template>
 
@@ -76,16 +76,27 @@
     </li>
   </template>
 
-  <div class="walk-overlay" id="walk-overlay">
-    <div class="walk-tunnel">
-      <div class="walk-torch"></div>
-      <div class="walk-footsteps">
-        <span></span><span></span><span></span><span></span>
+  <div class="trolley-overlay" id="trolley-overlay">
+    <div class="trolley-stage">
+      <div class="trolley-ribbon">TROLLEY ADVENTURE</div>
+      <div class="trolley-track">
+        <div class="trolley-glow"></div>
+        <div class="trolley-lights"></div>
       </div>
-      <div class="walk-progress">
-        <div class="walk-bar" id="walk-bar"></div>
+      <div class="trolley-cart" id="trolley-cart">
+        <div class="cart-top"></div>
+        <div class="cart-body">
+          <span class="cart-label" id="cart-label">出発</span>
+        </div>
+        <div class="cart-wheels">
+          <span></span><span></span>
+        </div>
       </div>
-      <p class="walk-label" id="walk-label">扉へ歩いている...</p>
+      <div class="trolley-sparks">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="trolley-count" id="trolley-count">GO!</div>
+      <p class="trolley-caption" id="trolley-caption">線路を切り替え中...</p>
     </div>
   </div>
 
